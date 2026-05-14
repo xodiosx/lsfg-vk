@@ -1,0 +1,95 @@
+name: Build PancakeTAS lsfg-vk (FD, bionic)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout PancakeTAS lsfg-vk
+        uses: actions/checkout@v4
+        with:
+          repository: PancakeTAS/lsfg-vk
+          ref: ff1a0f72a7d6d08b84d58b7b4dc5f05c9f904f98   # stable commit
+          path: lsfg-vk
+
+      # ----------------------------------------------------------
+      # Clone third‑party submodules into the expected paths
+      # (same structure as the Android forks)
+      # ----------------------------------------------------------
+      - name: Clone third‑party dependencies
+        run: |
+          cd lsfg-vk
+          mkdir -p thirdparty
+
+          git clone -b main https://github.com/PancakeTAS/dxbc.git        thirdparty/dxbc
+          git clone -b master https://github.com/trailofbits/pe-parse.git   thirdparty/pe-parse
+          git clone -b master https://github.com/ToruNiina/toml11.git       thirdparty/toml11
+          git clone -b master https://github.com/zeux/volk.git              thirdparty/volk
+
+          # pe-parse needs its submodule (pe-parser-library) initialised
+          cd thirdparty/pe-parse
+          git submodule update --init --recursive
+          cd ../..
+
+      # ----------------------------------------------------------
+      # Tiny CMakeLists patch: add volk subdirectory & platform define
+      # ----------------------------------------------------------
+      - name: Prepare CMakeLists for Android
+        run: |
+          cd lsfg-vk
+          # Insert after the first "include(GNUInstallDirs)" or at top
+          # We'll add right before the project() line.
+          # But PancakeTAS CMakeLists starts with project() already.
+          # Safer: use sed to append after "project(lsfg-vk LANGUAGES CXX)"
+          sed -i '/project(lsfg-vk LANGUAGES CXX)/a \
+          # Android platform support (no AHB)\n\
+          if(CMAKE_SYSTEM_NAME STREQUAL "Android")\n\
+              set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_ANDROID_KHR CACHE STRING "" FORCE)\n\
+              add_compile_definitions(VK_USE_PLATFORM_ANDROID_KHR)\n\
+          endif()\n\
+          add_subdirectory(thirdparty/volk EXCLUDE_FROM_ALL)' CMakeLists.txt
+
+      # ----------------------------------------------------------
+      # Setup NDK (same as your Wine workflow)
+      # ----------------------------------------------------------
+      - name: Setup NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
+      # ----------------------------------------------------------
+      # Configure with CMake (Android bionic)
+      # ----------------------------------------------------------
+      - name: Configure lsfg-vk for Android
+        run: |
+          cd lsfg-vk
+          cmake -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-28 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=./target \
+            -DLSFGVK_BUILD_VK_LAYER=ON \
+            -DLSFGVK_BUILD_UI=OFF \
+            -DLSFGVK_BUILD_CLI=OFF \
+            -DLSFGVK_INSTALL_XDG_FILES=OFF \
+            -DLSFGVK_LAYER_LIBRARY_PATH="/data/data/com.termux/files/usr/lib/liblsfg-vk-layer.so"
+
+      # ----------------------------------------------------------
+      # Build
+      # ----------------------------------------------------------
+      - name: Build
+        run: ninja -C lsfg-vk/build
+
+      - name: Install (optional, to grab files)
+        run: cmake --install lsfg-vk/build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsfg-vk-fd-bionic
+          path: |
+            lsfg-vk/build/liblsfg-vk-layer.so
+            lsfg-vk/VkLayer_LS_frame_generation.json
