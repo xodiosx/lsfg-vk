@@ -81,11 +81,12 @@ jobs:
       # Build
       # ----------------------------------------------------------
       - name: Build
-        run: ninja -C build
+        run: ninja -C lsfg-vk/build
 
       - name: Install (optional, to grab files)
-        run: cmake --install build
+        run: cmake --install lsfg-vk/build
              ls build
+             ls lsfg-vk/build
              ls target
             file target/lib/liblsfg-vk-layer.so
 
