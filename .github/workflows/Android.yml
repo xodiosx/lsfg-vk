@@ -85,10 +85,7 @@ jobs:
 
       - name: Install (optional, to grab files)
         run: cmake --install lsfg-vk/build
-             ls build
-             ls lsfg-vk/build
-             ls target
-            file target/lib/liblsfg-vk-layer.so
+             
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
