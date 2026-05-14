@@ -23,10 +23,10 @@ jobs:
           cd lsfg-vk
           mkdir -p thirdparty
 
-          git clone -b main https://github.com/PancakeTAS/dxbc.git        thirdparty/dxbc
-          git clone -b master https://github.com/trailofbits/pe-parse.git   thirdparty/pe-parse
-          git clone -b master https://github.com/ToruNiina/toml11.git       thirdparty/toml11
-          git clone -b master https://github.com/zeux/volk.git              thirdparty/volk
+          git clone  https://github.com/PancakeTAS/dxbc.git        thirdparty/dxbc
+          git clone  https://github.com/trailofbits/pe-parse.git   thirdparty/pe-parse
+          git clone  https://github.com/ToruNiina/toml11.git       thirdparty/toml11
+          git clone  https://github.com/zeux/volk.git              thirdparty/volk
 
           # pe-parse needs its submodule (pe-parser-library) initialised
           cd thirdparty/pe-parse
