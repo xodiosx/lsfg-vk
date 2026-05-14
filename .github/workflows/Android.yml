@@ -81,15 +81,15 @@ jobs:
       # Build
       # ----------------------------------------------------------
       - name: Build
-        run: ninja -C lsfg-vk/build
+        run: ninja -C build
 
       - name: Install (optional, to grab files)
-        run: cmake --install lsfg-vk/build
+        run: cmake --install build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: lsfg-vk-fd-bionic
           path: |
-            lsfg-vk/build/liblsfg-vk-layer.so
-            lsfg-vk/VkLayer_LS_frame_generation.json
+            lsfg-vk/build/*
+            lsfg-vk/target/*
